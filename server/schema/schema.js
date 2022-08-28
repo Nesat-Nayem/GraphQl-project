@@ -30,9 +30,9 @@ const ProjectType = new GraphQLObjectType({
             type: ClientType,
             resolve(parent,args){
                 return Client.findById(parent.clientId);
-            }
-        }
-    })
+            },
+        },
+    }),
 });
 
 
@@ -45,17 +45,17 @@ const ClientType = new GraphQLObjectType({
         name: {type : GraphQLString},
         email: {type: GraphQLString},
         phone: {type: GraphQLString}
-    })
+    }),
 });
 
-const RoteQuery = new GraphQLObjectType({
-    name : 'RoteQueryType',
+const RootQuery = new GraphQLObjectType({
+    name : 'RootQueryType',
     fields : {
         projects: {
             type: new GraphQLList(ProjectType),
             resolve(parent,args){
                return Project.find(); 
-            }
+            },
            
         },
         project:{
@@ -77,9 +77,9 @@ const RoteQuery = new GraphQLObjectType({
             args:{id: {type: GraphQLID}},
             resolve(parent,args) {
                 return Client.findById(args.id);
-            }
-        }
-    }
+            },
+        },
+    },
 });
 
 // metation
@@ -99,7 +99,7 @@ const mutation = new GraphQLObjectType({
                 name: args.name,
                 email: args.email,
                 phone: args.phone,
-            })
+            });
 
             return client.save();
         },
@@ -112,9 +112,15 @@ const mutation = new GraphQLObjectType({
         args:{
             id:{type:GraphQLNonNull(GraphQLID)},
         },
-        resolve(parent,args){
-            return Client.findByIdAndRemove(args.id)
-        },
+        resolve(parent, args) {
+            Project.find({ clientId: args.id }).then((projects) => {
+              projects.forEach((project) => {
+                project.remove();
+              });
+            });
+    
+            return Client.findByIdAndRemove(args.id);
+          },
     },
 
     // add project
@@ -128,10 +134,10 @@ const mutation = new GraphQLObjectType({
                 type: new GraphQLEnumType({
                     name: 'ProjectStatus',
                     values:{
-                        'new' : {value:'Not Started'},
-                        'progress' : {value:'In Progress'},
-                        'completed' : {value:'Completed'},
-                    }
+                        new : {value:'Not Started'},
+                        progress : {value:'In Progress'},
+                        completed : {value:'Completed'},
+                    },
                  }),
                 defaultValue: 'Not Started',
 
@@ -146,13 +152,13 @@ const mutation = new GraphQLObjectType({
                 clientId: args.clientId,
             });
             return project.save(); 
-        }
-    }
+        },
+    },
 
  },
 });
 
 module.exports = new GraphQLSchema({
-    query : RoteQuery,
+    query : RootQuery,
     mutation,
 })
